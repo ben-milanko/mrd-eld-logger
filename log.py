@@ -140,23 +140,23 @@ def saveData(fileName, array):
 
 def main():
     global args
-    # initSerial(args)
-    # global ser
-    # ser.open()
+    initSerial(args)
+    global ser
+    ser.open()
 
     if not args.noterminal:
         print(f'Querying ELD of ID:\t\t{args.id}')
 
-    # software_version = query(args.id+'SW?')[2:]
-    # print(f'ELD software version is:\t\t{software_version}')
+    software_version = query(args.id+'SW?')[2:]
+    print(f'ELD software version is:\t\t{software_version}')
 
-    # trip_point = query(args.id+'TP')[2:]
-    # print(f'ELD trip point is:\t\t{trip_point} kOhm')
+    trip_point = query(args.id+'TP')[2:]
+    print(f'ELD trip point is:\t\t{trip_point} kOhm')
 
-    # time_delay = query(args.id+'TD')[2:]
-    # print(f'ELD time delay is:\t\t{time_delay} seconds')
+    time_delay = query(args.id+'TD')[2:]
+    print(f'ELD time delay is:\t\t{time_delay} seconds')
 
-    bus_mode = 1#int(query(args.id+'BM')[2:])
+    bus_mode = int(query(args.id+'BM')[2:])
     print(f'ELD is operating in:\t\t{bus_mode_list[bus_mode]} mode')
     if bus_mode:
         header = ['Bus Leakage Status','AC Fault Time','AC Fault Level','Resistor Leakage']
@@ -188,8 +188,8 @@ def main():
     while True:
         now = datetime.datetime.now()
 
-        #results = poll(commands)
-        results = pollFake(commands) #Demonstrates the output
+        results = poll(commands)
+        #results = pollFake(commands) #Demonstrates the output
         results = [now.strftime('%Y-%m-%d'),now.strftime('%H:%M:%S')] + results
 
         if not args.nolog:
@@ -201,17 +201,6 @@ def main():
             print(''.join(results))
 
         time.sleep(args.poll)
-
-    # initSerial(args)
-    # global ser
-    # ser.open()
-    # while True:
-    #     mHex = ser.read()
-    #     if len(mHex)!= 0:
-    #         print("get",binascii.hexlify(bytearray(mHex)))
-    #     time.sleep(0.1)
-
-
 
 if __name__ == "__main__":
     main()
