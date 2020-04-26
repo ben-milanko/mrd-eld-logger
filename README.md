@@ -14,3 +14,8 @@ Install required packages
 
 `pip3 install requirements.txt`
 
+Run logger
+
+`python3 log.py`
+
+By default logs are stored to csv.log
