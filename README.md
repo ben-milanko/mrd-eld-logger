@@ -5,7 +5,7 @@ Queries and logs information for MRD - Earth Leakage Devices using RS-485 serial
 
 As this converter is full duplex and the ELD operates on half duplex the connection should be wired as below, with additional ELDs daisy chained rather star connected. If the connection is over a longer distance consider using twisted pair cable.
 
-!(https://github.com/bpmil3/mrd-eld-logger/raw/master/RS485HalfDuplex.JPG)
+!(https://github.com/bpmil3/mrd-eld-logger/raw/master/RS485 Half Duplex.JPG)
 
 ## Quick Start
 Create a python 3 virtual environment
