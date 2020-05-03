@@ -21,10 +21,13 @@ Install required packages
 `pip3 install requirements.txt`
 
 Make sure serial folder is owned by user
+
 `sudo chmod 666 /dev/ttyUSB0`
 
 Run logger
 
 `python3 log.py`
 
-By default logs are stored to Log{current timestamp}.log
+By default logs are stored to Log{current timestamp}.csv
+
+## Options
