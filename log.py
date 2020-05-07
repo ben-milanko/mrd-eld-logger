@@ -5,6 +5,7 @@ import serial.tools
 import time
 import binascii
 import datetime
+import sys
 
 prepend = bytearray(b'\x01')
 append = bytearray(b'\x03\x04')
@@ -22,9 +23,11 @@ parser.add_argument('--nolog', action='store_true',
 parser.add_argument('--file', type=str, 
                 help='File to log queries to, default is current "date_time.csv"')
 parser.add_argument('--id', default='01', type=str, 
-                help='ID of ELD to address')
+                help='ID(s) of ELD to address')
 parser.add_argument('--poll', default=5, type=float, 
                 help='Polls the ELD every n seconds')
+parser.add_argument('--edit_id', type=str, 
+                help='Changes the ID of the ELD currently connected. Only use while connected to single ELD.')
 args = parser.parse_args()
 
 
@@ -103,7 +106,7 @@ def query(message):
         if len(read) != 0:
             response = eldDecode(read)
         if c == 10:
-            response = 'timeout'
+            response = '  timeout'
             break
         c += 1
 
@@ -138,35 +141,63 @@ def saveData(fileName, array):
     f.write('\n'+','.join(array))
     f.close()
 
+def editID(oldID,newID):
+
+    response = query(oldID+'EDID '+newID)
+
+    if response == b'\06':
+        return 1
+    else:
+        return 0
+
 def main():
     global args
-    initSerial(args)
-    global ser
-    ser.open()
+    # global ser
+    # initSerial(args)
+    # ser.open()
 
-    if not args.noterminal:
-        print(f'Querying ELD of ID:\t\t{args.id}')
+    if args.edit_id:
+        success = editID('01',args.edit_id)
+        if success:
+            print('ID successfully changed')
+        else:
+            print('Error ID not changed')
+        sys.exit()
 
-    software_version = query(args.id+'SW?')[2:]
-    print(f'ELD software version is:\t\t{software_version}')
 
-    trip_point = query(args.id+'TP')[2:]
-    print(f'ELD trip point is:\t\t{trip_point} kOhm')
+    ids = args.id.split(',')
 
-    time_delay = query(args.id+'TD')[2:]
-    print(f'ELD time delay is:\t\t{time_delay} seconds')
+    numELD = len(ids)
 
-    bus_mode = int(query(args.id+'BM')[2:])
-    print(f'ELD is operating in:\t\t{bus_mode_list[bus_mode]} mode')
-    if bus_mode:
-        header = ['Bus Leakage Status','AC Fault Time','AC Fault Level','Resistor Leakage']
-        commands = ['BL','ACFT','ACFL','RLE']
-    else:
-        header = ['Bus Leakage Status','DC Fault Time Bus1','DC Fault Time Bus2','DC Fault Level Bus1','DC Fault Level Bus2','DC Voltage','Resistor Leakage']
-        commands = ['BL','DCFT1','DCFT2','DCFL1','DCFL2','V','RLE']
+    header = ['']*numELD
+    commands = ['']*numELD
 
-    header = ['Date','Time'] + header
+    for i in range(numELD):
+        if not args.noterminal:
+            print(f'Querying ELD of ID:\t\t{ids[i]}')
 
+            software_version = query(ids[i]+'SW?')[2:]
+            print(f'ELD software version is:\t\t{software_version}')
+
+            trip_point = query(ids[i]+'TP')[2:]
+            print(f'ELD trip point is:\t\t{trip_point} kOhm')
+
+            time_delay = query(ids[i]+'TD')[2:]
+            print(f'ELD time delay is:\t\t{time_delay} seconds')
+
+
+        bus_mode = int(query(ids[i]+'BM')[2:])
+        if not args.noterminal:
+            print(f'ELD is operating in:\t\t{bus_mode_list[bus_mode]} mode')
+        
+        if bus_mode:
+            header[i] = ['Bus Leakage Status','AC Fault Time','AC Fault Level','Resistor Leakage']
+            commands[i] = ['BL','ACFT','ACFL','RLE']
+        else:
+            header[i] = ['Bus Leakage Status','DC Fault Time Bus1','DC Fault Time Bus2','DC Fault Level Bus1','DC Fault Level Bus2','DC Voltage','Resistor Leakage']
+            commands[i] = ['BL','DCFT1','DCFT2','DCFL1','DCFL2','V','RLE']
+
+        header[i] = ['ELD ID','Date','Time'] + header
 
     if not args.nolog:
         if args.file:
@@ -177,7 +208,7 @@ def main():
         logFile = initFile(file)
 
     if not args.noterminal:
-        print('\nBEGIN POLL\n')
+        print(f'\nBEGIN POLL, polling every {args.poll} seconds\n')
         printHeader = [e+'        ' for e in header]
         widthPrintHeader = [len(e) for e in printHeader]
         print(''.join(printHeader))
@@ -186,19 +217,23 @@ def main():
         saveData(logFile,header)
 
     while True:
-        now = datetime.datetime.now()
 
-        results = poll(commands)
-        #results = pollFake(commands) #Demonstrates the output
-        results = [now.strftime('%Y-%m-%d'),now.strftime('%H:%M:%S')] + results
+        for i in range(numELD):
+            now = datetime.datetime.now()
 
-        if not args.nolog:
-            saveData(logFile,results)
+            results = poll(commands[i])
+            #results = pollFake(commands) #Demonstrates the output
+            results = [ids[i],now.strftime('%Y-%m-%d'),now.strftime('%H:%M:%S')] + results
 
-        if not args.noterminal:
-            for i in range(len(results)):
-                results[i] = results[i].ljust(widthPrintHeader[i])
-            print(''.join(results))
+            if not args.nolog:
+                saveData(logFile,results)
+
+            if not args.noterminal:
+                for i in range(len(results)):
+                    results[i] = results[i].ljust(widthPrintHeader[i])
+                print(''.join(results))
+            
+            #time.sleep(0.5) #Might be required?
 
         time.sleep(args.poll)
 
