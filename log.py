@@ -143,8 +143,9 @@ def saveData(fileName, array):
 
 def editID(oldID,newID):
 
-    response = query(oldID+'EDID '+newID)
-
+    response = query(oldID+'EDID '+str(int(newID)))
+    test = ''
+    print(response)
     if response == b'\06':
         return 1
     else:
