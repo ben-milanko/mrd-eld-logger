@@ -13,9 +13,9 @@ bus_mode_list = ['DC','AC']
 
 ser = serial.Serial()
 
-parser = argparse.ArgumentParser(description='Process some integers.')
+parser = argparse.ArgumentParser(description='Communicate with MRD - Earth Leakage Device.')
 parser.add_argument('--port', default='/dev/ttyUSB0', type=str,
-                help='Manually set port')
+                help='Manually set port, default is /dev/ttyUSB0')
 parser.add_argument('--noterminal', action='store_true',
                 help='Flag to stop terminal output')
 parser.add_argument('--nolog', action='store_true',
@@ -23,11 +23,11 @@ parser.add_argument('--nolog', action='store_true',
 parser.add_argument('--file', type=str, 
                 help='File to log queries to, default is current "date_time.csv"')
 parser.add_argument('--id', default='01', type=str, 
-                help='ID(s) of ELD to address')
-parser.add_argument('--poll', default=5, type=float, 
-                help='Polls the ELD every n seconds')
+                help='ID(s) of ELD to address default is 01. Comma seperate for multiple ELDs e.g. 01,02')
+parser.add_argument('--poll', default=1, type=float, 
+                help='Polls the ELD every n seconds, default is 1')
 parser.add_argument('--edit_id', type=str, 
-                help='Changes the ID of the ELD currently connected. Only use while connected to single ELD.')
+                help='Changes the ID of the ELD currently connected must be between 1 and 98 inclusive. Only use while connected to single ELD. Exits after completion.')
 args = parser.parse_args()
 
 
@@ -66,6 +66,7 @@ def eldDecode(receive_hex):
         if receiveChecksum == testReceiveChecksum:
             return receive_hex
         else:
+            print('Checksum error')
             return 1
 
     except:
@@ -77,9 +78,9 @@ def initSerial(args):
     ser.baudrate = 9600
     ser.port = args.port
     #ser.port = 'COM7'
-    #ser.timeout =0
+    #ser.timeout =0.1
     ser.stopbits = serial.STOPBITS_ONE
-    ser.bytesize = 8
+    ser.bytesize = serial.EIGHTBITS
     ser.parity = serial.PARITY_NONE
     ser.rtscts = 0
 
@@ -97,19 +98,26 @@ def pollFake(commands):
 
 def query(message):
 
-    ser.write(eldEncode(message))
+    m = eldEncode(message)
+    # print(m)
+    ser.write(m)
     response = ''
     c = 0
-    while response == False:
+
+    while response == '':
         time.sleep(0.1)
-        read = ser.read()
+        read = ser.read_until(append)
+        # print(read)
         if len(read) != 0:
+
             response = eldDecode(read)
+            break
         if c == 10:
             response = '  timeout'
             break
         c += 1
-
+       
+    print(f'Response: {response}')
     return response
 
 def initFile(fileName):
@@ -144,18 +152,17 @@ def saveData(fileName, array):
 def editID(oldID,newID):
 
     response = query(oldID+'EDID '+str(int(newID)))
-    test = ''
-    print(response)
-    if response == b'\06':
+
+    if response == '00':
         return 1
     else:
         return 0
 
 def main():
     global args
-    # global ser
-    # initSerial(args)
-    # ser.open()
+    global ser
+    initSerial(args)
+    ser.open()
 
     if args.edit_id:
         success = editID('01',args.edit_id)
