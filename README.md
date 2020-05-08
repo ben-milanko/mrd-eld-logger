@@ -31,8 +31,9 @@ Run logger
 By default logs are stored to Log{current timestamp}.csv
 
 ## Options
-```python
-usage: log.py [-h] [--port PORT] [--noterminal] [--nolog] [--file FILE] [--id ID] [--poll POLL] [--edit_id EDIT_ID]
+```
+usage: log.py [-h] [--port PORT] [--noterminal] [--nolog] [--file FILE]
+              [--id ID] [--poll POLL] [--edit_id EDIT_ID]
 
 Communicate with MRD - Earth Leakage Device.
 
@@ -41,10 +42,14 @@ optional arguments:
   --port PORT        Manually set port, default is /dev/ttyUSB0
   --noterminal       Flag to stop terminal output
   --nolog            Flag to stop logging to file
-  --file FILE        File to log queries to, default is current "date_time.csv"
-  --id ID            ID(s) of ELD to address default is 01. Comma seperate for multiple ELDs e.g. 01,02
+  --file FILE        File to log queries to, default is current
+                     "date_time.csv"
+  --id ID            ID(s) of ELD to address default is 01. Comma seperate
+                     for multiple ELDs e.g. 01,02
   --poll POLL        Polls the ELD every n seconds, default is 1
-  --edit_id EDIT_ID  Changes the ID of the ELD currently connected must be between 1 and 98 inclusive. Only use while connected to single ELD. Exits after completion.
+  --edit_id EDIT_ID  Changes the ID of the ELD currently connected must be
+                     between 1 and 98 inclusive. Only use while connected to
+                     single ELD. Exits after completion.
 ```
 ## Additional Information
 
