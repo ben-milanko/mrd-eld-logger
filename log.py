@@ -67,11 +67,11 @@ def eldDecode(receive_hex):
             return receive_hex
         else:
             print('Checksum error')
-            return 1
+            return '  checkError'
 
     except:
         print('Decoding error')
-        return 0
+        return '  decodeError'
 
 def initSerial(args):
     global ser
@@ -88,26 +88,34 @@ def poll(commands):
     global args
     results = []
     for i in range(len(commands)):
-        results.append(query(args.id+commands[i])[2:])
-    
+        time.sleep(0.1)
+        q = query('01'+commands[i])
+        #print(q)
+        if len(q) >= 2:
+            q = q[2:]
+        else:
+            q = 'no response'
+        results.append(q)
+
     return results
 
 def pollFake(commands):
     results = ['0','0','0','1000']
     return results
 
-def query(message):
+def query(message):#,mlen):
 
     m = eldEncode(message)
-    # print(m)
+    #print(m)
     ser.write(m)
     response = ''
     c = 0
 
     while response == '':
         time.sleep(0.1)
-        read = ser.read_until(append)
-        # print(read)
+        read = ser.read_until(b'\x04')
+        #read = ser.read(mlen)
+        #print(read)
         if len(read) != 0:
 
             response = eldDecode(read)
@@ -117,7 +125,7 @@ def query(message):
             break
         c += 1
        
-    print(f'Response: {response}')
+    #print(f'Response: {response}')
     return response
 
 def initFile(fileName):
@@ -179,20 +187,23 @@ def main():
 
     header = ['']*numELD
     commands = ['']*numELD
+    mlens = ['']*numELD
+    
 
     for i in range(numELD):
         if not args.noterminal:
             print(f'Querying ELD of ID:\t\t{ids[i]}')
 
             software_version = query(ids[i]+'SW?')[2:]
-            print(f'ELD software version is:\t\t{software_version}')
+            print(f'ELD software version is:\t{software_version}')
+            time.sleep(0.1)
 
             trip_point = query(ids[i]+'TP')[2:]
             print(f'ELD trip point is:\t\t{trip_point} kOhm')
-
+            time.sleep(0.1)
             time_delay = query(ids[i]+'TD')[2:]
             print(f'ELD time delay is:\t\t{time_delay} seconds')
-
+            time.sleep(0.1)
 
         bus_mode = int(query(ids[i]+'BM')[2:])
         if not args.noterminal:
@@ -202,10 +213,11 @@ def main():
             header[i] = ['Bus Leakage Status','AC Fault Time','AC Fault Level','Resistor Leakage']
             commands[i] = ['BL','ACFT','ACFL','RLE']
         else:
-            header[i] = ['Bus Leakage Status','DC Fault Time Bus1','DC Fault Time Bus2','DC Fault Level Bus1','DC Fault Level Bus2','DC Voltage','Resistor Leakage']
+            header[i] = ['Bus Fault Level','DC Fault Time Bus1','DC Fault Time Bus2','DC Fault Level Bus1','DC Fault Level Bus2','DC Voltage','Resistor Leakage']
             commands[i] = ['BL','DCFT1','DCFT2','DCFL1','DCFL2','V','RLE']
 
-        header[i] = ['ELD ID','Date','Time'] + header
+
+        header = ['ELD ID','Date','Time'] + header[0]
 
     if not args.nolog:
         if args.file:
@@ -217,6 +229,7 @@ def main():
 
     if not args.noterminal:
         print(f'\nBEGIN POLL, polling every {args.poll} seconds\n')
+        #print(header)
         printHeader = [e+'        ' for e in header]
         widthPrintHeader = [len(e) for e in printHeader]
         print(''.join(printHeader))
