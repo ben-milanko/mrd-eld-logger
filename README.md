@@ -8,6 +8,11 @@ As this converter is full duplex and the ELD operates on half duplex the connect
 ![ELD Wiring Diagram](https://github.com/bpmil3/mrd-eld-logger/blob/master/ELD%20Wiring.png)
 
 ## Quick Start
+
+If everything has previously been set up, simply connect the ELD and run
+`python3 log.py`
+
+## Installation
 Create a python 3 virtual environment
 
 `python3 -m venv mrd-eld`
